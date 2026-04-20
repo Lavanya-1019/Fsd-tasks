@@ -1,55 +1,43 @@
-const API = "http://localhost:3000";
+async function login() {
 
-async function fetchStudents(query = "") {
-    const res = await fetch(`${API}/students${query}`);
-    const data = await res.json();
-    renderTable(data.data);
-}
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const message = document.getElementById("message");
 
-function renderTable(data) {
-    const tableBody = document.getElementById("tableBody");
-    tableBody.innerHTML = "";
-
-    data.forEach(student => {
-        tableBody.innerHTML += `
-            <tr>
-                <td>${student.name}</td>
-                <td>${student.email}</td>
-                <td>${student.dept}</td>
-                <td>${student.DOB.split("T")[0]}</td>
-            </tr>
-        `;
-    });
-}
-
-function sortName() {
-    fetchStudents("?sortBy=name");
-}
-
-function sortDOB() {
-    fetchStudents("?sortBy=dob");
-}
-
-document.getElementById("deptFilter").addEventListener("change", function () {
-    const dept = this.value;
-    if (dept) {
-        fetchStudents(`?dept=${dept}`);
-    } else {
-        fetchStudents();
+    
+    if (!email || !password) {
+        message.style.color = "red";
+        message.innerText = "All fields are required";
+        return;
     }
-});
 
-async function fetchCount() {
-    const res = await fetch(`${API}/students/count`);
-    const data = await res.json();
+    if (!email.includes("@")) {
+        message.style.color = "red";
+        message.innerText = "Enter valid email";
+        return;
+    }
 
-    let text = "Department Count: ";
-    data.data.forEach(d => {
-        text += `${d.dept} = ${d.total}  `;
-    });
+    try {
+        const response = await fetch("http://localhost:4000/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+        });
 
-    document.getElementById("countSection").innerText = text;
+        const data = await response.json();
+
+        if (data.success) {
+            message.style.color = "green";
+            message.innerText = "Login Successful ";
+        } else {
+            message.style.color = "red";
+            message.innerText = data.message;
+        }
+
+    } catch (error) {
+        message.style.color = "red";
+        message.innerText = "Server Error";
+    }
 }
-
-fetchStudents();
-fetchCount();

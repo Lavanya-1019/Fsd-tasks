@@ -6,11 +6,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 🔹 Database Connection
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: 'Dasarivasu@827', // change if needed
-    database: 'task2'
+    database: 'task3'
 });
 
 db.connect((err) => {
@@ -18,27 +19,23 @@ db.connect((err) => {
         console.error('Database connection failed:', err);
         process.exit(1);
     }
-    console.log('Connected to MySQL Database');
+    console.log('Connected to task3 database');
 });
 
-app.get('/students', (req, res) => {
-    const { sortBy, dept } = req.query;
+// 🔹 Login Route
+app.post('/login', (req, res) => {
+    const { email, password } = req.body;
 
-    let query = 'SELECT name, email, dept, DOB FROM student';
-    let values = [];
-
-    if (dept) {
-        query += ' WHERE dept = ?';
-        values.push(dept);
+    if (!email || !password) {
+        return res.status(400).json({
+            success: false,
+            message: "All fields are required"
+        });
     }
 
-    if (sortBy === 'name') {
-        query += ' ORDER BY name ASC';
-    } else if (sortBy === 'dob') {
-        query += ' ORDER BY DOB ASC';
-    }
+    const query = 'SELECT * FROM users WHERE email = ? AND password = ?';
 
-    db.query(query, values, (err, result) => {
+    db.query(query, [email, password], (err, result) => {
         if (err) {
             return res.status(500).json({
                 success: false,
@@ -46,36 +43,20 @@ app.get('/students', (req, res) => {
             });
         }
 
-        res.json({
-            success: true,
-            data: result
-        });
-    });
-});
-
-app.get('/students/count', (req, res) => {
-    const query = `
-        SELECT dept, COUNT(*) AS total
-        FROM student
-        GROUP BY dept
-    `;
-
-    db.query(query, (err, result) => {
-        if (err) {
-            return res.status(500).json({
+        if (result.length === 0) {
+            return res.status(401).json({
                 success: false,
-                message: err.message
+                message: "Invalid email or password"
             });
         }
 
         res.json({
             success: true,
-            data: result
+            message: "Login successful"
         });
     });
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+app.listen(4000, () => {
+    console.log("Server running on http://localhost:4000");
 });
