@@ -1,43 +1,39 @@
-async function login() {
+const API = "http://localhost:5000";
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-    const message = document.getElementById("message");
+async function loadOrders() {
+    const res = await fetch(`${API}/orders`);
+    const data = await res.json();
 
-    
-    if (!email || !password) {
-        message.style.color = "red";
-        message.innerText = "All fields are required";
-        return;
-    }
+    const tbody = document.getElementById("orderTable");
+    tbody.innerHTML = "";
 
-    if (!email.includes("@")) {
-        message.style.color = "red";
-        message.innerText = "Enter valid email";
-        return;
-    }
-
-    try {
-        const response = await fetch("http://localhost:4000/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ email, password })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            message.style.color = "green";
-            message.innerText = "Login Successful ";
-        } else {
-            message.style.color = "red";
-            message.innerText = data.message;
-        }
-
-    } catch (error) {
-        message.style.color = "red";
-        message.innerText = "Server Error";
-    }
+    data.forEach(order => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${order.customer}</td>
+                <td>${order.product}</td>
+                <td>${order.quantity}</td>
+                <td>${order.price}</td>
+                <td>${order.total}</td>
+                <td>${order.order_date.split("T")[0]}</td>
+            </tr>
+        `;
+    });
 }
+
+async function loadHighest() {
+    const res = await fetch(`${API}/orders/highest`);
+    const data = await res.json();
+    document.getElementById("highest").innerText =
+        `${data.name} - ₹${data.total}`;
+}
+
+async function loadActive() {
+    const res = await fetch(`${API}/customers/active`);
+    const data = await res.json();
+    document.getElementById("active").innerText =
+        `${data.name} (${data.total_orders} orders)`;
+}
+
+loadOrders();
+loadHighest();

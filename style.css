@@ -6,57 +6,89 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔹 Database Connection
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'Dasarivasu@827', // change if needed
-    database: 'task3'
+    password: 'Dasarivasu@827',  // change if needed
+    database: 'task4'
 });
 
-db.connect((err) => {
+db.connect(err => {
     if (err) {
-        console.error('Database connection failed:', err);
+        console.error("Database connection failed:", err);
         process.exit(1);
     }
-    console.log('Connected to task3 database');
+    console.log("Connected to task4 database");
 });
 
-// 🔹 Login Route
-app.post('/login', (req, res) => {
-    const { email, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({
-            success: false,
-            message: "All fields are required"
-        });
-    }
 
-    const query = 'SELECT * FROM users WHERE email = ? AND password = ?';
+app.get('/orders', (req, res) => {
 
-    db.query(query, [email, password], (err, result) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: err.message
-            });
-        }
+    const query = `
+        SELECT 
+            c.name AS customer,
+            p.product_name AS product,
+            o.quantity,
+            p.price,
+            (p.price * o.quantity) AS total,
+            o.order_date
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.customer_id
+        JOIN products p ON o.product_id = p.product_id
+        ORDER BY o.order_date DESC
+    `;
 
-        if (result.length === 0) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password"
-            });
-        }
-
-        res.json({
-            success: true,
-            message: "Login successful"
-        });
+    db.query(query, (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json(result);
     });
 });
 
-app.listen(4000, () => {
-    console.log("Server running on http://localhost:4000");
+
+
+app.get('/orders/highest', (req, res) => {
+
+    const query = `
+        SELECT *
+        FROM (
+            SELECT 
+                c.name,
+                (p.price * o.quantity) AS total
+            FROM orders o
+            JOIN customers c ON o.customer_id = c.customer_id
+            JOIN products p ON o.product_id = p.product_id
+        ) AS totals
+        ORDER BY total DESC
+        LIMIT 1
+    `;
+
+    db.query(query, (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json(result[0]);
+    });
+});
+
+
+
+app.get('/customers/active', (req, res) => {
+
+    const query = `
+        SELECT c.name, COUNT(o.order_id) AS total_orders
+        FROM customers c
+        JOIN orders o ON c.customer_id = o.customer_id
+        GROUP BY c.customer_id
+        ORDER BY total_orders DESC
+        LIMIT 1
+    `;
+
+    db.query(query, (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json(result[0]);
+    });
+});
+
+
+app.listen(5000, () => {
+    console.log("Server running on http://localhost:5000");
 });
