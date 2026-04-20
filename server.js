@@ -1,32 +1,55 @@
-document.getElementById("registerform").addEventListener("submit", function(e) {
+const API = "http://localhost:3000";
 
-    e.preventDefault();
+async function fetchStudents(query = "") {
+    const res = await fetch(`${API}/students${query}`);
+    const data = await res.json();
+    renderTable(data.data);
+}
 
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    const dob = document.getElementById("dob").value;
-    const department = document.getElementById("department").value;
-    const phone = document.getElementById("phone").value;
+function renderTable(data) {
+    const tableBody = document.getElementById("tableBody");
+    tableBody.innerHTML = "";
 
-    fetch("http://localhost:5000/addStudent", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            name: name,
-            email: email,
-            dob: dob,
-            department: department,
-            phone: phone
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert(data.message);
-    })
-    .catch(error => {
-        console.log(error);
+    data.forEach(student => {
+        tableBody.innerHTML += `
+            <tr>
+                <td>${student.name}</td>
+                <td>${student.email}</td>
+                <td>${student.dept}</td>
+                <td>${student.DOB.split("T")[0]}</td>
+            </tr>
+        `;
+    });
+}
+
+function sortName() {
+    fetchStudents("?sortBy=name");
+}
+
+function sortDOB() {
+    fetchStudents("?sortBy=dob");
+}
+
+document.getElementById("deptFilter").addEventListener("change", function () {
+    const dept = this.value;
+    if (dept) {
+        fetchStudents(`?dept=${dept}`);
+    } else {
+        fetchStudents();
+    }
+});
+
+async function fetchCount() {
+    const res = await fetch(`${API}/students/count`);
+    const data = await res.json();
+
+    let text = "Department Count: ";
+    data.data.forEach(d => {
+        text += `${d.dept} = ${d.total}  `;
     });
 
-});
+    document.getElementById("countSection").innerText = text;
+}
+
+fetchStudents();
+fetchCount();

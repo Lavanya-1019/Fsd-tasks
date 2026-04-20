@@ -1,64 +1,81 @@
-const express = require("express");
-const mysql = require("mysql2");
-const cors = require("cors");
+const express = require('express');
+const mysql = require('mysql2');
+const cors = require('cors');
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
-
 
 const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "Dasarivasu@827",  
-    database: "taask1"
+    host: 'localhost',
+    user: 'root',
+    password: 'Dasarivasu@827', // change if needed
+    database: 'task2'
 });
 
-db.connect(err => {
+db.connect((err) => {
     if (err) {
-        console.log("Database connection failed");
-    } else {
-        console.log("Connected to MySQL");
+        console.error('Database connection failed:', err);
+        process.exit(1);
     }
+    console.log('Connected to MySQL Database');
 });
 
+app.get('/students', (req, res) => {
+    const { sortBy, dept } = req.query;
 
+    let query = 'SELECT name, email, dept, DOB FROM student';
+    let values = [];
 
-app.post("/addStudent", (req, res) => {
+    if (dept) {
+        query += ' WHERE dept = ?';
+        values.push(dept);
+    }
 
-    const { name, email, dob, department, phone } = req.body;
+    if (sortBy === 'name') {
+        query += ' ORDER BY name ASC';
+    } else if (sortBy === 'dob') {
+        query += ' ORDER BY DOB ASC';
+    }
 
-    const sql = "INSERT INTO student (name, email, dob, department, phone) VALUES (?, ?, ?, ?, ?)";
-
-    db.query(sql, [name, email, dob, department, phone], (err, result) => {
+    db.query(query, values, (err, result) => {
         if (err) {
-            res.status(500).json({ message: "Error inserting data" });
-        } else {
-            res.json({ message: "Student stored successfully" });
+            return res.status(500).json({
+                success: false,
+                message: err.message
+            });
         }
+
+        res.json({
+            success: true,
+            data: result
+        });
     });
 });
 
+app.get('/students/count', (req, res) => {
+    const query = `
+        SELECT dept, COUNT(*) AS total
+        FROM student
+        GROUP BY dept
+    `;
 
-
-app.get("/students", (req, res) => {
-
-    const sql = "SELECT * FROM student";
-
-    db.query(sql, (err, result) => {
+    db.query(query, (err, result) => {
         if (err) {
-    console.log("Insert Error:", err);   
-    res.status(500).json({ message: "Error inserting data" });
-}
-else {
-            res.json(result);
+            return res.status(500).json({
+                success: false,
+                message: err.message
+            });
         }
+
+        res.json({
+            success: true,
+            data: result
+        });
     });
 });
 
-
-app.listen(5000, () => {
-    console.log("Server running at http://localhost:5000");
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });

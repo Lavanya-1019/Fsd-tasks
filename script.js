@@ -1,5 +1,5 @@
 {
-  "name": "task-1",
+  "name": "task-2",
   "version": "1.0.0",
   "description": "",
   "main": "script.js",
@@ -13,6 +13,6 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "mysql2": "^3.18.2"
+    "mysql2": "^3.17.2"
   }
 }
